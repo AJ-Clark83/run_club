@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 import time
 
 # Connect to Supabase
-url = "https://bomtlnyvgkqsrigvclaj.supabase.co"
+url = st.secrets["supabase"]["url"]
 key = st.secrets["supabase"]["key"]
 supabase: Client = create_client(url, key)
 
