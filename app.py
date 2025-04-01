@@ -16,6 +16,7 @@ df = pd.DataFrame(response.data)
 df['student_name'] = df['student_name'].str.lower().str.strip()
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 df['Date'] = df['timestamp'].dt.date
+df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
 # Standardise room number formatting
 df['room_number'] = df['room_number'].str.lower().str.strip().str.replace(r'\broom\b\s*', '', regex=True)
