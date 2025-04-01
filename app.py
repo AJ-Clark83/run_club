@@ -14,22 +14,25 @@ df = pd.DataFrame(response.data)
 
 # Data cleaning and formatting
 df['student_name'] = df['student_name'].str.lower().str.strip()
-df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+# Convert timestamp to datetime and extract run year
+df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+df['Run Year'] = df['timestamp'].dt.year
 df['Date'] = df['timestamp'].dt.date
 
 # Standardise room number formatting
 df['room_number'] = df['room_number'].str.lower().str.strip().str.replace(r'\broom\b\s*', '', regex=True)
 df['room_number'] = df['room_number'].str.replace('kindy c', 'kindy')
 
-# Rename columns to match your existing code references
+# Rename columns to match existing references
 df = df.rename(columns={
     'student_name': 'Student Name',
     'room_number': 'Room Number',
     'year': 'Year',
 })
 
-# Drop unused columns if they exist
-df = df.drop(columns=[col for col in ['timestamp', 'Laps Completed (Sprints / Laps)', 'id'] if col in df.columns])
+# Drop unused columns (but keep timestamp!)
+df = df.drop(columns=[col for col in ['Laps Completed (Sprints / Laps)', 'id'] if col in df.columns])
 
 # Sort by date
 df = df.sort_values(by='Date')
