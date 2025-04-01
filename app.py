@@ -16,7 +16,6 @@ df = pd.DataFrame(response.data)
 df['student_name'] = df['student_name'].str.lower().str.strip()
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 df['Date'] = df['timestamp'].dt.date
-df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
 # Standardise room number formatting
 df['room_number'] = df['room_number'].str.lower().str.strip().str.replace(r'\broom\b\s*', '', regex=True)
@@ -115,6 +114,20 @@ elif view == 'Student Name':
 
     # Title
     st.header('Run Data By Student')
+
+    st.markdown("<hr style='border-top: 2px solid #082251; margin: 20px 0;'>", unsafe_allow_html=True)
+
+    st.subheader('Filter by Run Club Year')
+
+    # Extract run years from the timestamp column
+    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+    df['Run Year'] = df['timestamp'].dt.year
+
+    available_years = sorted(df['Run Year'].dropna().unique(), reverse=True)
+    selected_run_year = st.selectbox('Select Run Club Year', available_years, key='run_year_filter')
+
+    # Filter the dataframe to only that year
+    df = df[df['Run Year'] == selected_run_year]
 
     st.markdown("<hr style='border-top: 2px solid #082251; margin: 20px 0;'>", unsafe_allow_html=True)
 
