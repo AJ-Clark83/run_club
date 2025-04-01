@@ -72,7 +72,12 @@ if view == 'Date':
     runs_per_day.set_index('Date_Display', inplace=True)
 
     st.subheader('Total Runs by Date')
-    st.dataframe(runs_per_day[['Total Runs']], hide_index=True, use_container_width=True)
+
+    # Reset index to make 'Date' a visible column again
+    runs_per_day_reset = runs_per_day.reset_index()[['Date_Display', 'Total Runs']]
+    runs_per_day_reset = runs_per_day_reset.rename(columns={'Date_Display': 'Date'})
+
+    st.dataframe(runs_per_day_reset, hide_index=True, use_container_width=True)
 
     st.subheader('Total Runs Trend')
     st.line_chart(runs_per_day['Total Runs'], use_container_width=True)
