@@ -80,11 +80,14 @@ if room_number:
     existing_students = get_students(year, room_number)
 
     if existing_students:
-        student_choice = st.selectbox('Select Student:', existing_students + ['Other'])
-        if student_choice == 'Other':
+        student_options = [""] + existing_students + ["Other"]
+        student_choice = st.selectbox("Select Student:", student_options, index=0)
+        if student_choice == "Other":
             student_name = st.text_input('Enter Student Name:')
-        else:
+        elif student_choice:
             student_name = student_choice
+        else:
+            student_name = ""
     else:
         student_name = st.text_input('Enter Student Name:')
 
