@@ -3,51 +3,54 @@ from supabase import create_client, Client
 from datetime import datetime, timedelta, timezone
 import time
 
-# Access credentials from secrets
-url = st.secrets["supabase"]["url"]
+# Connect to Supabase
+url = "https://bomtlnyvgkqsrigvclaj.supabase.co"
 key = st.secrets["supabase"]["key"]
-
 supabase: Client = create_client(url, key)
 
-# Cutoff datetime for filtering
-DATE_CUTOFF = datetime(2025, 1, 1)
+# Set timezone
+now = datetime.now(timezone(timedelta(hours=8)))
+today_str = now.strftime('%Y-%m-%d')
 
-# Function to get unique room numbers for a given year after cutoff
+# Set filter cutoff date for active rooms/students
+CUTOFF_DATE = datetime(2025, 1, 1)
+
+# Helper: fetch room numbers for a year, with timestamp >= 2025
 def get_room_numbers(year):
     result = supabase.table('run club').select('room_number', 'timestamp').eq('year', year).execute()
     rooms = set()
     for entry in result.data:
-        ts_str = entry.get('timestamp')
+        ts = entry.get('timestamp')
         room = entry.get('room_number')
-        if ts_str and room:
+        if ts and room:
             try:
-                ts = datetime.fromisoformat(ts_str)
-                if ts >= DATE_CUTOFF:
+                ts_dt = datetime.fromisoformat(ts)
+                if ts_dt >= CUTOFF_DATE:
                     rooms.add(room)
-            except Exception:
+            except:
                 pass
     return sorted(rooms)
 
-# Function to fetch students based on year and room after cutoff
+# Helper: fetch students for year + room, with timestamp >= 2025
 def get_students(year, room_number):
-    result = supabase.table('run club').select('student_name', 'timestamp').eq('year', year).eq('room_number', room_number).execute()
+    result = supabase.table('run club').select('student_name', 'timestamp') \
+        .eq('year', year).eq('room_number', room_number).execute()
     students = set()
     for entry in result.data:
-        ts_str = entry.get('timestamp')
+        ts = entry.get('timestamp')
         name = entry.get('student_name')
-        if ts_str and name:
+        if ts and name:
             try:
-                ts = datetime.fromisoformat(ts_str)
-                if ts >= DATE_CUTOFF:
+                ts_dt = datetime.fromisoformat(ts)
+                if ts_dt >= CUTOFF_DATE:
                     students.add(name)
-            except Exception:
+            except:
                 pass
     return sorted(students)
 
-# Function to add new student
+# Helper: insert runner attendance
 def add_student(student_name, year, room_number):
-    now = datetime.now(timezone(timedelta(hours=8)))  # UTC+8
-    timestamp = now.strftime('%Y-%m-%d %H:%M:%S')  # Format for Supabase datetime field
+    timestamp = now.strftime('%Y-%m-%d %H:%M:%S')
     supabase.table('run club').insert({
         'student_name': student_name,
         'year': year,
@@ -55,71 +58,67 @@ def add_student(student_name, year, room_number):
         'timestamp': timestamp
     }).execute()
 
-# Streamlit UI
-st.title('Run Club Registration')
+# --- Streamlit UI ---
 
-year = st.selectbox('Select Year:', ['Kindy', 'PP', 1, 2, 3, 4, 5, 6])
+st.title("Run Club Registration")
 
+# Year selection
+year = st.selectbox('Select Year:', ['Kindy', 'PP', 1, 2, 3, 4, 5, 6], key='year_select')
+
+# Room selection
 room_numbers = get_room_numbers(year)
-
-if not room_numbers:
-    st.warning("No recent rooms found for this year — please add one.")
-
 room_numbers.append('Other')
-room_choice = st.selectbox('Select Room Number:', room_numbers)
+room_choice = st.selectbox('Select Room Number:', room_numbers, key='room_select')
 
 if room_choice == 'Other':
-    room_number = st.text_input('Enter Room Number (numbers only):')
+    room_number = st.text_input('Enter Room Number (numbers only):', key='room_other')
     if room_number and not room_number.isdigit():
         st.error("Please enter a valid room number (digits only).")
         st.stop()
 else:
     room_number = room_choice
 
+# Student selection
+student_name = ""
 if room_number:
     existing_students = get_students(year, room_number)
 
     if existing_students:
         student_options = [""] + existing_students + ["Other"]
-        student_choice = st.selectbox("Select Student:", student_options, index=0)
+        student_choice = st.selectbox('Select Student:', student_options, index=0, key='student_select')
+
         if student_choice == "Other":
-            student_name = st.text_input('Enter Student Name:')
+            student_name = st.text_input('Enter Student Name:', key='student_other')
         elif student_choice:
             student_name = student_choice
-        else:
-            student_name = ""
     else:
-        student_name = st.text_input('Enter Student Name:')
+        student_name = st.text_input('Enter Student Name:', key='student_other')
 
-    if st.button('Submit'):
-        if student_name:
-            # Get today's date in local timezone
-            now = datetime.now(timezone(timedelta(hours=8)))
-            today_str = now.strftime('%Y-%m-%d')
+# Submit button
+if st.button('Submit'):
+    if student_name:
+        # Check if student already registered today
+        result = supabase.table('run club').select('id', 'timestamp') \
+            .eq('student_name', student_name) \
+            .eq('year', year) \
+            .eq('room_number', room_number).execute()
 
-            # Query Supabase for existing entry today for this student
-            result = supabase.table('run club') \
-                .select('id', 'timestamp') \
-                .eq('student_name', student_name) \
-                .eq('year', year) \
-                .eq('room_number', room_number) \
-                .execute()
+        already_registered_today = any(
+            entry.get('timestamp', '').startswith(today_str) for entry in result.data
+        )
 
-            already_registered_today = False
-            for entry in result.data:
-                ts = entry.get('timestamp')
-                if ts and ts.startswith(today_str):
-                    already_registered_today = True
-                    break
-
-            if already_registered_today:
-                st.warning(f"{student_name} has already been registered today.")
-            else:
-                add_student(student_name, year, room_number)
-                st.success(f'{student_name} has been registered for this session!')
-                time.sleep(2)
-                st.rerun()
-
+        if already_registered_today:
+            st.warning(f"{student_name} has already been registered today.")
         else:
-            st.error('Please enter a student name.')
+            add_student(student_name, year, room_number)
+            st.success(f"{student_name} has been registered!")
 
+            # Reset form fields
+            for key in ['year_select', 'room_select', 'room_other', 'student_select', 'student_other']:
+                if key in st.session_state:
+                    del st.session_state[key]
+
+            time.sleep(2)
+            st.rerun()
+    else:
+        st.error("Please enter a student name.")
