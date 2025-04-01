@@ -93,12 +93,33 @@ if room_number:
 
     if st.button('Submit'):
         if student_name:
-            if student_name not in existing_students:
-                add_student(student_name, year, room_number)
-                st.success(f'{student_name} added to the database!')
+            # Get today's date in local timezone
+            now = datetime.now(timezone(timedelta(hours=8)))
+            today_str = now.strftime('%Y-%m-%d')
+
+            # Query Supabase for existing entry today for this student
+            result = supabase.table('run club') \
+                .select('id', 'timestamp') \
+                .eq('student_name', student_name) \
+                .eq('year', year) \
+                .eq('room_number', room_number) \
+                .execute()
+
+            already_registered_today = False
+            for entry in result.data:
+                ts = entry.get('timestamp')
+                if ts and ts.startswith(today_str):
+                    already_registered_today = True
+                    break
+
+            if already_registered_today:
+                st.warning(f"{student_name} has already been registered today.")
             else:
+                add_student(student_name, year, room_number)
                 st.success(f'{student_name} has been registered for this session!')
-            time.sleep(2)
-            st.rerun()
+                time.sleep(2)
+                st.rerun()
+
         else:
             st.error('Please enter a student name.')
+
