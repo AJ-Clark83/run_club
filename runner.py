@@ -71,12 +71,28 @@ room_numbers.append('Other')
 room_choice = st.selectbox('Select Room Number:', room_numbers, key='room_select')
 
 if room_choice == 'Other':
-    room_number = st.text_input('Enter Room Number (numbers only):', key='room_other')
-    if room_number and not room_number.isdigit():
-        st.error("Please enter a valid room number (digits only).")
-        st.stop()
+    room_number = st.text_input('Enter Room Number:', key='room_other')
+
+    if room_number:
+        room_number_upper = room_number.upper()
+
+        is_valid = (
+            room_number.isdigit() or
+            (len(room_number_upper) == 1 and room_number_upper in ['A', 'B', 'C', 'D']) or
+            room_number_upper in ['PP1', 'PP2', 'PP3', 'PP4']
+        )
+
+        if not is_valid:
+            st.error("Please enter a valid room: a number, A–D, or PP1–PP4.")
+            st.stop()
+
+        # Normalise to uppercase after passing validation
+        room_number = room_number_upper
+
 else:
     room_number = room_choice
+
+
 
 # Student selection
 student_name = ""
