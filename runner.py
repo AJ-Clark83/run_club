@@ -127,11 +127,8 @@ if st.button('Submit'):
             st.success(f"{student_name} has been registered!")
 
             # Reset form fields to blank defaults
-            st.session_state['year_select'] = ""
-            st.session_state['room_select'] = ""
-            st.session_state['room_other'] = ""
-            st.session_state['student_select'] = ""
-            st.session_state['student_other'] = ""
+            for key in ['year_select', 'room_select', 'room_other', 'student_select', 'student_other']:
+                st.session_state.pop(key, None)
 
             time.sleep(0.5)
             st.rerun()
