@@ -13,7 +13,7 @@ now = datetime.now(timezone(timedelta(hours=8)))
 today_str = now.strftime('%Y-%m-%d')
 
 # Set filter cutoff date for active rooms/students
-CUTOFF_DATE = datetime(2025, 1, 1)
+CUTOFF_DATE = datetime(datetime.now().year, 1, 1)
 
 # Helper: fetch room numbers for a year, with timestamp >= 2025
 def get_room_numbers(year):
@@ -51,24 +51,38 @@ def get_students(year, room_number):
 # Helper: insert runner attendance
 def add_student(student_name, year, room_number):
     timestamp = now.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Clean up the name before inserting
+    clean_name = student_name.strip().lower()
+
     supabase.table('run club').insert({
-        'student_name': student_name,
+        'student_name': clean_name,
         'year': year,
         'room_number': room_number,
         'timestamp': timestamp
     }).execute()
+
 
 # --- Streamlit UI ---
 
 st.title("Run Club Registration")
 
 # Year selection
-year = st.selectbox('Select Year:', ['Kindy', 'PP', 1, 2, 3, 4, 5, 6], key='year_select')
+year_options = [""] + ['Kindy', 'PP', 1, 2, 3, 4, 5, 6]
+year = st.selectbox('Select Year:', year_options, key='year_select')
+if not year:
+    st.stop()
+
 
 # Room selection
-room_numbers = get_room_numbers(year)
+room_numbers = get_room_numbers(year) if year else []
 room_numbers.append('Other')
+room_numbers = [""] + room_numbers
 room_choice = st.selectbox('Select Room Number:', room_numbers, key='room_select')
+
+if not room_choice:
+    st.stop()
+
 
 if room_choice == 'Other':
     room_number = st.text_input('Enter Room Number:', key='room_other')
