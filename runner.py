@@ -67,7 +67,7 @@ def add_student(student_name, year, room_number):
 st.title("Run Club Registration")
 
 # --- Year selection ---
-year_options = [""] + ['Kindy', 'PP', 1, 2, 3, 4, 5, 6]
+year_options = [""] + ['Kindy', 'PP', '1', '2', '3', '4', '5', '6']
 year = st.selectbox('Select Year:', year_options, key='year_select')
 
 # --- Room selection ---
