@@ -68,7 +68,12 @@ st.title("Run Club Registration")
 
 # --- Year selection ---
 year_options = [""] + ['Kindy', 'PP', '1', '2', '3', '4', '5', '6']
-year = st.selectbox('Select Year:', year_options, key='year_select')
+year = st.selectbox(
+    'Select Year:',
+    year_options,
+    index=year_options.index(st.session_state.get('year_select', "")),
+    key='year_select'
+)
 
 # --- Room selection ---
 room_numbers = get_room_numbers(year) if year else []
