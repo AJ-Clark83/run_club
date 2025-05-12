@@ -39,7 +39,8 @@ def clean_data(df):
     return df
 
 # --- Load and clean data ---
-response = supabase.table('run club').select('*').execute()
+#response = supabase.table('run club').select('*').execute()
+response = supabase.table('run club').select('*').range(0, 9999).execute()
 df_raw = pd.DataFrame(response.data)
 df = clean_data(df_raw)
 
