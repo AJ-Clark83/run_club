@@ -90,7 +90,7 @@ if room_choice == 'Other':
         is_valid = (
             room_number_input.isdigit() or
             (len(room_number_upper) == 1 and room_number_upper in ['A', 'B', 'C', 'D']) or
-            room_number_upper in ['PP1', 'PP2', 'PP3', 'PP4']
+            room_number_upper in ['PP1', 'PP2', 'PP3', 'PP4','Bardee 1','Bardee 2','Bardee 3','Bardee 4','Bardee 5']
         )
         if not is_valid:
             st.error("Please enter a valid room: a number, A–D, or PP1–PP4.")
